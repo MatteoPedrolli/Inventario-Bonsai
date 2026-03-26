@@ -359,13 +359,13 @@ function busy(id,on,lbl){
 
 async function apiGet(sheet){const r=await fetch(`${API}?sheet=${sheet}`);return r.json();}
 async function apiPost(body){
-  // Apps Script richiede il redirect — usiamo fetch con redirect follow
-  const r=await fetch(API,{
-    method:'POST',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify(body),
-    redirect:'follow'
+  // Apps Script cross-origin: inviamo i dati come parametro GET codificato
+  // doGet legge ?action=...&data=... e delega a doPost logic
+  const params=new URLSearchParams({
+    action:body.action,
+    data:JSON.stringify(body)
   });
+  const r=await fetch(`${API}?${params.toString()}`,{redirect:'follow'});
   const text=await r.text();
   try{return JSON.parse(text);}catch(e){return{status:'ok'};}
 }
