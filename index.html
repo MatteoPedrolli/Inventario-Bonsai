@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盆栽 Bonsai Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --moss:#2d5016;--sage:#5a8a2e;--bamboo:#8aab4a;
+  --paper:#f5f0e8;--mist:#e8efe0;--border:#c8d9b0;
+  --ink:#1a1a18;--amber:#c17f24;--shadow:rgba(45,80,22,0.13);--err:#c0392b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Mono',monospace;background:var(--paper);color:var(--ink);min-height:100vh;
+  background-image:radial-gradient(ellipse at 8% 15%,rgba(90,138,46,.07) 0%,transparent 55%),
+    radial-gradient(ellipse at 92% 85%,rgba(45,80,22,.05) 0%,transparent 55%);}
+#loader{position:fixed;inset:0;background:rgba(245,240,232,.9);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:999;gap:16px;transition:opacity .3s}
+#loader.hidden{opacity:0;pointer-events:none}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--sage);
+  border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader p{font-size:11px;letter-spacing:1.5px;color:var(--sage);text-transform:uppercase}
+header{background:var(--moss);position:sticky;top:0;z-index:200;box-shadow:0 2px 20px var(--shadow)}
+.h-inner{display:flex;align-items:stretch}
+.h-brand{padding:16px 28px;display:flex;align-items:center;gap:14px;border-right:1px solid rgba(255,255,255,.12);flex-shrink:0}
+.h-kanji{font-family:'Noto Serif JP',serif;font-size:26px;color:var(--bamboo);line-height:1}
+.h-texts{display:flex;flex-direction:column}
+.h-title{font-family:'Noto Serif JP',serif;font-size:13px;color:#fff;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+.h-sub{font-size:9px;color:var(--bamboo);letter-spacing:1px;font-weight:300}
+nav{display:flex;align-items:stretch;flex:1;overflow-x:auto}
+nav button{background:none;border:none;color:rgba(255,255,255,.6);font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;padding:0 16px;cursor:pointer;
+  transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap}
+nav button .ico{display:block;font-size:15px;margin-bottom:2px;text-align:center}
+nav button:hover{color:#fff}
+nav button.active{color:var(--bamboo);border-bottom-color:var(--bamboo);background:rgba(255,255,255,.04)}
+main{max-width:1180px;margin:0 auto;padding:28px 20px}
+.section{display:none;animation:fadeIn .3s ease}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.sec-hdr{display:flex;align-items:baseline;gap:14px;margin-bottom:24px;padding-bottom:12px;border-bottom:2px solid var(--border)}
+.sec-title{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:600;color:var(--moss)}
+.sec-badge{font-size:10px;color:var(--sage);background:var(--mist);padding:3px 10px;border-radius:20px;border:1px solid var(--border);letter-spacing:.8px}
+.fcard{background:#fff;border-radius:12px;border:1px solid var(--border);box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:24px}
+.fcard-hdr{background:linear-gradient(135deg,var(--moss) 0%,var(--sage) 100%);padding:14px 22px;display:flex;align-items:center;gap:10px}
+.fcard-hdr span{font-size:18px}
+.fcard-hdr h3{font-family:'Noto Serif JP',serif;font-size:13px;color:#fff;font-weight:600;letter-spacing:1px}
+.fcard-body{padding:22px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--sage);font-weight:500}
+.fg input,.fg select,.fg textarea{font-family:'DM Mono',monospace;font-size:12px;border:1.5px solid var(--border);
+  border-radius:6px;padding:8px 11px;background:var(--paper);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(90,138,46,.11);background:#fff}
+.fg input[readonly]{color:var(--moss);font-weight:500;cursor:default;background:var(--mist)}
+.fg textarea{resize:vertical;min-height:65px}
+/* TERRICCI */
+.terr-block{margin-top:20px;background:var(--mist);border-radius:10px;border:1px solid var(--border);padding:18px 20px}
+.terr-title{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--sage);font-weight:500;margin-bottom:16px}
+.terr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.terr-item{background:#fff;border-radius:8px;border:1px solid var(--border);padding:13px 13px 10px;display:flex;flex-direction:column;gap:5px}
+.terr-name{font-size:10px;font-weight:500;color:var(--moss)}
+.terr-price{font-size:9px;color:#aaa}
+.terr-item input{font-family:'DM Mono',monospace;font-size:13px;border:1.5px solid var(--border);
+  border-radius:5px;padding:6px 9px;background:var(--paper);color:var(--ink);outline:none;width:100%;transition:border-color .2s}
+.terr-item input:focus{border-color:var(--sage);background:#fff}
+.terr-totals{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+.terr-tot{background:#fff;border-radius:6px;border:1px solid var(--border);padding:8px 14px}
+.terr-tot-lbl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:#aaa;margin-bottom:3px}
+.terr-tot-val{font-size:13px;font-weight:500;color:var(--moss)}
+/* INFO */
+.info-box{background:var(--mist);border:1px solid var(--border);border-radius:8px;padding:12px 16px;
+  font-size:11px;color:var(--sage);margin-bottom:20px;display:flex;gap:8px;line-height:1.5}
+/* BUTTONS */
+.btn-row{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.btn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:9px 20px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;font-weight:500}
+.btn-p{background:var(--moss);color:#fff}
+.btn-p:hover{background:var(--sage);transform:translateY(-1px);box-shadow:0 4px 12px var(--shadow)}
+.btn-p:disabled{background:#aaa;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{background:var(--mist);color:var(--moss);border:1.5px solid var(--border)}
+.btn-s:hover{background:var(--border)}
+.btn-d{background:#fdecea;color:var(--err);border:1.5px solid #f5b7b1;padding:4px 11px;font-size:9px}
+.btn-d:hover{background:#f5b7b1}
+/* TABLE */
+.twrap{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:auto;box-shadow:0 4px 20px var(--shadow)}
+.twrap table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+.twrap thead tr{background:var(--moss)}
+.twrap thead th{font-family:'Noto Serif JP',serif;font-size:9px;font-weight:600;color:rgba(255,255,255,.85);
+  letter-spacing:1px;text-transform:uppercase;padding:13px 14px;text-align:left;white-space:nowrap}
+.twrap tbody tr{border-bottom:1px solid #f0ebe0;transition:background .15s}
+.twrap tbody tr:last-child{border-bottom:none}
+.twrap tbody tr:hover{background:var(--mist)}
+.twrap tbody td{padding:10px 14px;vertical-align:middle}
+.cb{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;background:var(--mist);color:var(--moss);
+  border:1px solid var(--border);padding:2px 7px;border-radius:4px;letter-spacing:.8px;white-space:nowrap}
+.sb{display:inline-flex;align-items:center;font-size:9px;padding:2px 9px;border-radius:20px;font-weight:500;letter-spacing:.5px}
+.sb-a{background:#e8f5e1;color:var(--sage);border:1px solid var(--border)}
+.sb-l{background:#fff3dc;color:var(--amber);border:1px solid #f5d58a}
+.sb-ar{background:#f0f0f0;color:#888;border:1px solid #ddd}
+.empty{text-align:center;padding:40px;color:#bbb;font-size:11px;letter-spacing:1px}
+.empty .eico{font-size:36px;opacity:.45;margin-bottom:10px}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:#fff;border-radius:10px;border:1px solid var(--border);padding:18px 20px;box-shadow:0 2px 10px var(--shadow)}
+.kpi-lbl{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:#999;margin-bottom:6px}
+.kpi-val{font-family:'Noto Serif JP',serif;font-size:26px;font-weight:600;color:var(--moss);line-height:1}
+.kpi-sub{font-size:10px;color:var(--sage);margin-top:4px}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--moss);color:#fff;padding:11px 20px;
+  border-radius:8px;font-size:11px;letter-spacing:.5px;box-shadow:0 8px 24px var(--shadow);
+  opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999}
+#toast.show{opacity:1;transform:none}
+#toast.err{background:var(--err)}
+@media(max-width:640px){
+  .h-brand{padding:12px 16px}
+  nav button{padding:0 10px;font-size:9px}
+  main{padding:14px 12px}
+  .fgrid,.terr-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="loader"><div class="spinner"></div><p>Connessione al database…</p></div>
+
+<header><div class="h-inner">
+  <div class="h-brand">
+    <div class="h-kanji">盆栽</div>
+    <div class="h-texts">
+      <span class="h-title">Bonsai Manager</span>
+      <span class="h-sub">Gestione Inventario Lotti</span>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="showTab('lotti')"><span class="ico">🌿</span>Lotti</button>
+    <button onclick="showTab('rinvaso')"><span class="ico">🪴</span>Rinvaso</button>
+    <button onclick="showTab('potatura')"><span class="ico">✂️</span>Potatura</button>
+    <button onclick="showTab('legatura')"><span class="ico">🔗</span>Legatura</button>
+    <button onclick="showTab('materiali')"><span class="ico">🏷️</span>Materiali</button>
+    <button onclick="showTab('riepilogo')"><span class="ico">📊</span>Riepilogo</button>
+  </nav>
+</div></header>
+
+<main>
+
+<!-- LOTTI -->
+<section id="sec-lotti" class="section active">
+  <div class="sec-hdr"><h2 class="sec-title">Registro Lotti</h2><span class="sec-badge" id="cnt-lotti">—</span></div>
+  <div class="fcard">
+    <div class="fcard-hdr"><span>➕</span><h3>Nuovo Lotto</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Specie (3 lettere)</label><input id="l-sp3" maxlength="3" placeholder="ACE" oninput="this.value=this.value.toUpperCase();genCodice()"></div>
+        <div class="fg"><label>Anno (2 cifre)</label><input id="l-yr" maxlength="2" placeholder="25" oninput="genCodice()"></div>
+        <div class="fg"><label>Codice Lotto (auto)</label><input id="l-cod" readonly placeholder="ACE-25-001"></div>
+        <div class="fg"><label>Nome Specie</label><input id="l-nome" placeholder="Acer palmatum"></div>
+        <div class="fg"><label>Quantità Piante</label><input id="l-qty" type="number" min="1" placeholder="10"></div>
+        <div class="fg"><label>Data Ingresso</label><input id="l-data" type="date"></div>
+        <div class="fg"><label>Provenienza</label><input id="l-prov" placeholder="Vivaio / Importazione…"></div>
+        <div class="fg"><label>Stato</label><select id="l-stato"><option>Attivo</option><option>In lavorazione</option><option>Archiviato</option></select></div>
+        <div class="fg"><label>Sottogruppo</label><input id="l-sub" maxlength="4" placeholder="A, B, C…" oninput="this.value=this.value.toUpperCase()" title="Lettera o codice che identifica una variante del lotto (es. A = vasi ø14, B = vasi ø16)"></div>
+        <div class="fg full"><label>Note</label><textarea id="l-note" placeholder="Osservazioni…"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('l')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-lotto" onclick="saveLotto()">💾 Salva Lotto</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap"><table>
+    <thead><tr><th>Codice</th><th>Specie</th><th>Anno</th><th>Sottogruppo</th><th>Piante</th><th>Ingresso</th><th>Provenienza</th><th>Stato</th><th></th></tr></thead>
+    <tbody id="tb-lotti"></tbody>
+  </table></div>
+</section>
+
+<!-- RINVASO -->
+<section id="sec-rinvaso" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Operazioni di Rinvaso</h2><span class="sec-badge" id="cnt-rinvaso">—</span></div>
+  <div class="fcard">
+    <div class="fcard-hdr"><span>🪴</span><h3>Registra Rinvaso</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Codice Lotto</label><select id="r-lotto"><option value="">— seleziona —</option></select></div>
+        <div class="fg"><label>Data</label><input id="r-data" type="date"></div>
+        <div class="fg"><label>Diametro Vaso (cm)</label><input id="r-diam" type="number" step="0.5" min="1" placeholder="es. 14"></div>
+        <div class="fg"><label>Costo Vaso / Altri (€)</label><input id="r-costo-altri" type="number" step="0.01" placeholder="0.00" oninput="calcRinvaso()"></div>
+        <div class="fg"><label>Ore Spese</label><input id="r-ore" type="number" step="0.5" min="0" placeholder="0.0"></div>
+      </div>
+
+      <div class="terr-block">
+        <div class="terr-title">🌱 Quantità Terricci Utilizzati</div>
+        <div class="terr-grid" id="terr-inputs">
+          <!-- generato da JS -->
+        </div>
+        <div class="terr-totals">
+          <div class="terr-tot"><div class="terr-tot-lbl">Litri Totali</div><div class="terr-tot-val" id="tot-litri">0.00 L</div></div>
+          <div class="terr-tot"><div class="terr-tot-lbl">Costo Terricci</div><div class="terr-tot-val" id="tot-costo-terr">0.00 €</div></div>
+          <div class="terr-tot"><div class="terr-tot-lbl">Costo Totale Rinvaso</div><div class="terr-tot-val" id="tot-costo-rin" style="color:var(--amber)">0.00 €</div></div>
+        </div>
+      </div>
+
+      <div class="fgrid" style="margin-top:16px">
+        <div class="fg full"><label>Note</label><textarea id="r-note" placeholder="Osservazioni sul rinvaso…"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('r')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-rinvaso" onclick="saveRinvaso()">💾 Salva Rinvaso</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap"><table>
+    <thead><tr><th>ID</th><th>Lotto</th><th>Data</th><th>Ø cm</th><th>Akadama L</th><th>Kiryu L</th><th>Pomice L</th><th>2ª Mano L</th><th>Tot. L</th><th>Costo Terricci €</th><th>Costo Totale €</th><th>Ore</th><th></th></tr></thead>
+    <tbody id="tb-rinvaso"></tbody>
+  </table></div>
+</section>
+
+<!-- POTATURA -->
+<section id="sec-potatura" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Operazioni di Potatura</h2><span class="sec-badge" id="cnt-potatura">—</span></div>
+  <div class="fcard">
+    <div class="fcard-hdr"><span>✂️</span><h3>Registra Potatura</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Codice Lotto</label><select id="p-lotto"><option value="">— seleziona —</option></select></div>
+        <div class="fg"><label>Data</label><input id="p-data" type="date"></div>
+        <div class="fg"><label>Tipo Potatura</label><select id="p-tipo"><option>Potatura di pulizia</option><option>Potatura stilistica</option><option>Potatura di mantenimento</option><option>Pinzatura</option></select></div>
+        <div class="fg"><label>Ore Spese</label><input id="p-ore" type="number" step="0.5" min="0" placeholder="0.0"></div>
+        <div class="fg full"><label>Note</label><textarea id="p-note" placeholder="Rami eliminati, impostazione…"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('p')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-potatura" onclick="savePotatura()">💾 Salva Potatura</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap"><table>
+    <thead><tr><th>ID</th><th>Lotto</th><th>Data</th><th>Tipo</th><th>Ore</th><th></th></tr></thead>
+    <tbody id="tb-potatura"></tbody>
+  </table></div>
+</section>
+
+<!-- LEGATURA -->
+<section id="sec-legatura" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Operazioni di Legatura</h2><span class="sec-badge" id="cnt-legatura">—</span></div>
+  <div class="fcard">
+    <div class="fcard-hdr"><span>🔗</span><h3>Registra Legatura</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Codice Lotto</label><select id="g-lotto"><option value="">— seleziona —</option></select></div>
+        <div class="fg"><label>Data</label><input id="g-data" type="date"></div>
+        <div class="fg"><label>Tipo Filo</label><select id="g-tipo"><option>Alluminio</option><option>Rame</option></select></div>
+        <div class="fg"><label>Calibro (mm)</label><input id="g-cal" type="number" step="0.5" min="0.5" placeholder="2.0"></div>
+        <div class="fg"><label>Fili Stimati (m)</label><input id="g-mt" type="number" step="1" min="0" placeholder="15" oninput="calcLeg()"></div>
+        <div class="fg"><label>Costo Filo €/m</label><input id="g-cm" type="number" step="0.01" placeholder="0.08" oninput="calcLeg()"></div>
+        <div class="fg"><label>Ore Spese</label><input id="g-ore" type="number" step="0.5" min="0" placeholder="2.0"></div>
+        <div class="fg"><label>Costo Fili (€)</label><input id="g-costo" readonly placeholder="calcolato auto"></div>
+        <div class="fg full"><label>Note</label><textarea id="g-note" placeholder="Rami infilati, tecnica…"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('g')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-legatura" onclick="saveLegatura()">💾 Salva Legatura</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap"><table>
+    <thead><tr><th>ID</th><th>Lotto</th><th>Data</th><th>Filo</th><th>mm</th><th>Metri</th><th>€/m</th><th>Costo €</th><th>Ore</th><th></th></tr></thead>
+    <tbody id="tb-legatura"></tbody>
+  </table></div>
+</section>
+
+<!-- MATERIALI -->
+<section id="sec-materiali" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Listino Materiali</h2><span class="sec-badge" id="cnt-materiali">—</span></div>
+  <div class="info-box">ℹ️&nbsp; I prezzi qui impostati vengono usati automaticamente nel Rinvaso per calcolare il costo in base ai litri utilizzati. I nomi devono corrispondere esattamente: <strong>Akadama</strong>, <strong>Kiryu</strong>, <strong>Pomice</strong>, <strong>Terriccio 2ª Mano</strong>.</div>
+  <div class="fcard">
+    <div class="fcard-hdr"><span>➕</span><h3>Aggiungi / Aggiorna Materiale</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Nome Materiale</label><input id="mat-nome" placeholder="es. Akadama"></div>
+        <div class="fg"><label>Prezzo (€/L)</label><input id="mat-prezzo" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="fg"><label>Unità</label><input id="mat-unita" value="L" placeholder="L"></div>
+        <div class="fg"><label>Note</label><input id="mat-note" placeholder="Fornitore, qualità…"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('mat')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-mat" onclick="saveMateriale()">💾 Salva Materiale</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap"><table>
+    <thead><tr><th>Nome</th><th>Prezzo €/L</th><th>Unità</th><th>Note</th><th></th></tr></thead>
+    <tbody id="tb-materiali"></tbody>
+  </table></div>
+</section>
+
+<!-- RIEPILOGO -->
+<section id="sec-riepilogo" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Riepilogo Costi</h2><span class="sec-badge" id="cnt-riepilogo">—</span></div>
+
+  <div class="fcard" style="margin-bottom:24px">
+    <div class="fcard-hdr"><span>⏱️</span><h3>Costo Orario Manodopera</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Tariffa Oraria (€/h)</label>
+          <input id="rie-tariffa" type="number" step="0.01" value="25.00" oninput="renderRiepilogo()" style="font-size:18px;font-weight:500;color:var(--moss)">
+        </div>
+        <div class="fg" style="justify-content:flex-end;padding-top:18px">
+          <span style="font-size:10px;color:#aaa;letter-spacing:.8px">Applicata a tutte le ore di rinvaso, potatura e legatura per ogni lotto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Codice</th><th>Piante</th><th>Ore Tot.</th><th>Costo Ore €</th><th>Costo Materiali €</th><th>Totale €</th><th>€/Pianta</th><th>Stato</th></tr></thead>
+    <tbody id="tb-riepilogo"></tbody>
+  </table></div>
+</section>
+
+</main>
+<div id="toast"></div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbxb8EgliaeIkXOFFdgjL61bG8ZggeLGyCpOY4RIzpEO0lV3hcLlFD2VcWeDcbjZYYXV/exec';
+
+// I 4 terricci fissi — le chiavi corrispondono alle colonne del foglio Rinvaso
+const TERRICCI=[
+  {key:'LitriAkadama',     label:'Akadama',            ico:'🟤'},
+  {key:'LitriKiryu',       label:'Kiryu',              ico:'⚪'},
+  {key:'LitriPomice',      label:'Pomice',             ico:'🔵'},
+  {key:'LitriSecondaMano', label:'Terriccio 2ª Mano',  ico:'⬛'},
+];
+
+const DB={Lotti:[],Rinvaso:[],Potatura:[],Legatura:[],Materiali:[]};
+const TABS=['lotti','rinvaso','potatura','legatura','materiali','riepilogo'];
+let counters={Rinvaso:1,Potatura:1,Legatura:1};
+
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show'+(err?' err':'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
+}
+function fmt(n){return(isNaN(n)||n==null||n==='')?'—':Number(n).toFixed(2).replace('.',',')+' €';}
+function fmtL(n){return(isNaN(n)||n==null||n===''||Number(n)===0)?'—':Number(n).toFixed(2)+' L';}
+function loader(on){document.getElementById('loader').classList.toggle('hidden',!on);}
+function busy(id,on,lbl){
+  const b=document.getElementById(id);if(!b)return;
+  b.disabled=on;
+  if(on){b.dataset.lbl=b.textContent;b.textContent='⏳ Salvataggio…';}
+  else b.textContent=lbl||b.dataset.lbl||b.textContent;
+}
+
+async function apiGet(sheet){const r=await fetch(`${API}?sheet=${sheet}`);return r.json();}
+async function apiPost(body){const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});return r.json();}
+
+async function loadAll(){
+  loader(true);
+  try{
+    const[L,R,P,G,M]=await Promise.all([
+      apiGet('Lotti'),apiGet('Rinvaso'),apiGet('Potatura'),apiGet('Legatura'),apiGet('Materiali')
+    ]);
+    DB.Lotti=L||[];DB.Rinvaso=R||[];DB.Potatura=P||[];DB.Legatura=G||[];DB.Materiali=M||[];
+    const maxN=(arr,k)=>arr.reduce((m,r)=>{const n=parseInt((String(r[k]||'')).split('-').pop()||0);return n>m?n:m;},0);
+    counters.Rinvaso=maxN(DB.Rinvaso,'ID')+1;
+    counters.Potatura=maxN(DB.Potatura,'ID')+1;
+    counters.Legatura=maxN(DB.Legatura,'ID')+1;
+    renderAll();
+  }catch(e){toast('⚠ Errore connessione al database',true);console.error(e);}
+  loader(false);
+}
+
+function renderAll(){
+  renderLotti();buildTerrInputs();renderRinvaso();
+  renderPotatura();renderLegatura();renderMateriali();
+  refreshSelects();genCodice();
+}
+
+function showTab(id){
+  TABS.forEach((t,i)=>{
+    document.getElementById('sec-'+t).classList.toggle('active',t===id);
+    document.querySelectorAll('nav button')[i].classList.toggle('active',t===id);
+  });
+  if(id==='riepilogo')renderRiepilogo();
+  if(id==='rinvaso')buildTerrInputs();
+}
+
+function genCodice(){
+  const sp=(document.getElementById('l-sp3').value||'___').padEnd(3,'_').substring(0,3);
+  const yr=(document.getElementById('l-yr').value||'__').padStart(2,'0').substring(0,2);
+  document.getElementById('l-cod').value=`${sp}-${yr}-${String(DB.Lotti.length+1).padStart(3,'0')}`;
+}
+
+// ── TERRICCI ─────────────────────────────────────────────
+function buildTerrInputs(){
+  const c=document.getElementById('terr-inputs');
+  c.innerHTML='';
+  TERRICCI.forEach(t=>{
+    const mat=DB.Materiali.find(m=>(m.Nome||'').trim().toLowerCase()===t.label.toLowerCase());
+    const prezzo=mat?Number(mat.PrezzoLitro||0):0;
+    const ptxt=prezzo>0?`${prezzo.toFixed(2)} €/L`:'— prezzo non impostato';
+    c.innerHTML+=`
+      <div class="terr-item">
+        <div class="terr-name">${t.ico} ${t.label}</div>
+        <div class="terr-price">${ptxt}</div>
+        <input type="number" id="r-${t.key}" step="0.1" min="0" placeholder="0.0 L"
+          oninput="calcRinvaso()" data-prezzo="${prezzo}">
+      </div>`;
+  });
+  calcRinvaso();
+}
+
+function calcRinvaso(){
+  let totL=0,totC=0;
+  TERRICCI.forEach(t=>{
+    const inp=document.getElementById('r-'+t.key);
+    if(!inp)return;
+    const l=parseFloat(inp.value)||0;
+    const p=parseFloat(inp.dataset.prezzo)||0;
+    totL+=l;totC+=l*p;
+  });
+  const altri=parseFloat(document.getElementById('r-costo-altri').value)||0;
+  document.getElementById('tot-litri').textContent=totL.toFixed(2)+' L';
+  document.getElementById('tot-costo-terr').textContent=totC.toFixed(2)+' €';
+  document.getElementById('tot-costo-rin').textContent=(totC+altri).toFixed(2)+' €';
+}
+
+
+function calcLeg(){
+  const m=parseFloat(document.getElementById('g-mt').value)||0;
+  const c=parseFloat(document.getElementById('g-cm').value)||0;
+  document.getElementById('g-costo').value=(m*c).toFixed(2);
+}
+
+function refreshSelects(){
+  ['r-lotto','p-lotto','g-lotto'].forEach(id=>{
+    const sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML='<option value="">— seleziona —</option>';
+    DB.Lotti.forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.Codice;o.textContent=`${l.Codice} — ${l.Specie||''}`;
+      sel.appendChild(o);
+    });
+    sel.value=cur;
+  });
+}
+
+function resetForm(pfx){
+  document.querySelectorAll(`[id^="${pfx}-"]`).forEach(el=>{
+    if(el.tagName==='SELECT')el.selectedIndex=0;
+    else if(el.type==='range')el.value=el.defaultValue;
+    else el.value='';
+  });
+  if(pfx==='r')calcRinvaso();
+  if(pfx==='p')calcPot();
+  if(pfx==='g')calcLeg();
+}
+
+// ── LOTTI ────────────────────────────────────────────────
+async function saveLotto(){
+  const cod=document.getElementById('l-cod').value;
+  if(!cod||cod.includes('_')){toast('⚠ Compila specie e anno!',true);return;}
+  const qty=parseInt(document.getElementById('l-qty').value);
+  if(!qty||qty<1){toast('⚠ Inserisci quantità piante!',true);return;}
+  const yr=document.getElementById('l-yr').value;
+  const prog=cod.split('-')[2];
+  const sub=document.getElementById('l-sub').value.trim();
+  const row=[cod,document.getElementById('l-nome').value||'—',yr,prog,qty,
+    document.getElementById('l-data').value,document.getElementById('l-prov').value||'—',
+    document.getElementById('l-stato').value,sub,document.getElementById('l-note').value];
+  busy('btn-save-lotto',true);
+  try{
+    await apiPost({action:'append',sheet:'Lotti',row});
+    DB.Lotti.push({Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
+      DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]});
+    renderLotti();refreshSelects();genCodice();resetForm('l');toast('✓ Lotto salvato');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-lotto',false,'💾 Salva Lotto');
+}
+function renderLotti(){
+  const tb=document.getElementById('tb-lotti');
+  document.getElementById('cnt-lotti').textContent=DB.Lotti.length+' lott'+(DB.Lotti.length===1?'o':'i');
+  if(!DB.Lotti.length){tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">🌱</div>Nessun lotto registrato</td></tr>';return;}
+  tb.innerHTML=DB.Lotti.map((l,i)=>`<tr>
+    <td><span class="cb">${l.Codice}</span></td><td>${l.Specie||'—'}</td><td>${l.Anno||'—'}</td>
+    <td style="text-align:center">${l.Sottogruppo?`<span class="cb" style="color:var(--amber);border-color:#f5d58a">${l.Sottogruppo}</span>`:'—'}</td>
+    <td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
+    <td>${l.DataIngresso||'—'}</td><td>${l.Provenienza||'—'}</td>
+    <td><span class="sb ${l.Stato==='Attivo'?'sb-a':l.Stato==='In lavorazione'?'sb-l':'sb-ar'}">${l.Stato||'—'}</span></td>
+    <td><button class="btn btn-d" onclick="deleteLotto(${i},'${l.Codice}')">Elimina</button></td>
+  </tr>`).join('');
+}
+async function deleteLotto(i,cod){
+  if(!confirm(`Eliminare il lotto ${cod}?`))return;
+  try{
+    await apiPost({action:'delete',sheet:'Lotti',keyCol:1,keyVal:cod});
+    DB.Lotti.splice(i,1);renderLotti();refreshSelects();genCodice();toast('Lotto eliminato');
+  }catch(e){toast('⚠ Errore eliminazione',true);}
+}
+
+// ── RINVASO ──────────────────────────────────────────────
+async function saveRinvaso(){
+  const lotto=document.getElementById('r-lotto').value;
+  if(!lotto){toast('⚠ Seleziona un lotto!',true);return;}
+  let totL=0,costoTerr=0;
+  const litri={};
+  TERRICCI.forEach(t=>{
+    const inp=document.getElementById('r-'+t.key);
+    const l=parseFloat(inp?.value)||0;
+    const p=parseFloat(inp?.dataset.prezzo)||0;
+    litri[t.key]=l;totL+=l;costoTerr+=l*p;
+  });
+  const altri=parseFloat(document.getElementById('r-costo-altri').value)||0;
+  const costoTot=costoTerr+altri;
+  const id='RIN-'+String(counters.Rinvaso++).padStart(3,'0');
+  const diam=document.getElementById('r-diam').value;
+  const ore=parseFloat(document.getElementById('r-ore').value)||0;
+  const row=[id,lotto,document.getElementById('r-data').value,diam,
+    litri.LitriAkadama,litri.LitriKiryu,litri.LitriPomice,litri.LitriSecondaMano,
+    totL,costoTerr,costoTot,ore,document.getElementById('r-note').value];
+  busy('btn-save-rinvaso',true);
+  try{
+    await apiPost({action:'append',sheet:'Rinvaso',row});
+    DB.Rinvaso.push({ID:id,Lotto:lotto,Data:row[2],DiametroVaso:diam,
+      LitriAkadama:litri.LitriAkadama,LitriKiryu:litri.LitriKiryu,
+      LitriPomice:litri.LitriPomice,LitriSecondaMano:litri.LitriSecondaMano,
+      LitriTotali:totL,CostoTerricci:costoTerr,CostoMateriali:costoTot,Ore:ore,Note:row[12]});
+    renderRinvaso();resetForm('r');calcRinvaso();toast('✓ Rinvaso salvato');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-rinvaso',false,'💾 Salva Rinvaso');
+}
+function renderRinvaso(){
+  const tb=document.getElementById('tb-rinvaso');
+  document.getElementById('cnt-rinvaso').textContent=DB.Rinvaso.length+' op.';
+  if(!DB.Rinvaso.length){tb.innerHTML='<tr><td colspan="12" class="empty"><div class="eico">🪴</div>Nessun rinvaso registrato</td></tr>';return;}
+  tb.innerHTML=DB.Rinvaso.map((r,i)=>`<tr>
+    <td><span class="cb">${r.ID}</span></td><td><span class="cb">${r.Lotto}</span></td>
+    <td>${r.Data||'—'}</td><td style="text-align:center">${r.DiametroVaso||'—'} cm</td>
+    <td style="text-align:center">${fmtL(r.LitriAkadama)}</td>
+    <td style="text-align:center">${fmtL(r.LitriKiryu)}</td>
+    <td style="text-align:center">${fmtL(r.LitriPomice)}</td>
+    <td style="text-align:center">${fmtL(r.LitriSecondaMano)}</td>
+    <td style="text-align:center;font-weight:500">${fmtL(r.LitriTotali)}</td>
+    <td style="text-align:right">${fmt(r.CostoTerricci)}</td>
+    <td style="text-align:right;font-weight:500">${fmt(r.CostoMateriali)}</td>
+    <td style="text-align:center">${r.Ore||0}h</td>
+    <td><button class="btn btn-d" onclick="deleteOp('Rinvaso',${i},'${r.ID}')">Elimina</button></td>
+  </tr>`).join('');
+}
+
+// ── POTATURA ─────────────────────────────────────────────
+async function savePotatura(){
+  const lotto=document.getElementById('p-lotto').value;
+  if(!lotto){toast('⚠ Seleziona un lotto!',true);return;}
+  const ore=parseFloat(document.getElementById('p-ore').value)||0;
+  if(!ore){toast('⚠ Inserisci le ore spese!',true);return;}
+  const id='POT-'+String(counters.Potatura++).padStart(3,'0');
+  const row=[id,lotto,document.getElementById('p-data').value,
+    document.getElementById('p-tipo').value,ore,document.getElementById('p-note').value];
+  busy('btn-save-potatura',true);
+  try{
+    await apiPost({action:'append',sheet:'Potatura',row});
+    DB.Potatura.push({ID:id,Lotto:lotto,Data:row[2],TipoPotatura:row[3],Ore:ore,Note:row[5]});
+    renderPotatura();resetForm('p');toast('✓ Potatura salvata');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-potatura',false,'💾 Salva Potatura');
+}
+function renderPotatura(){
+  const tb=document.getElementById('tb-potatura');
+  document.getElementById('cnt-potatura').textContent=DB.Potatura.length+' op.';
+  if(!DB.Potatura.length){tb.innerHTML='<tr><td colspan="8" class="empty"><div class="eico">✂️</div>Nessuna potatura registrata</td></tr>';return;}
+  tb.innerHTML=DB.Potatura.map((p,i)=>`<tr>
+    <td><span class="cb">${p.ID}</span></td><td><span class="cb">${p.Lotto}</span></td>
+    <td>${p.Data||'—'}</td><td>${p.TipoPotatura}</td>
+    <td style="text-align:center">${p.Ore}h</td>
+    <td><button class="btn btn-d" onclick="deleteOp('Potatura',${i},'${p.ID}')">Elimina</button></td>
+  </tr>`).join('');
+}
+
+// ── LEGATURA ─────────────────────────────────────────────
+async function saveLegatura(){
+  const lotto=document.getElementById('g-lotto').value;
+  if(!lotto){toast('⚠ Seleziona un lotto!',true);return;}
+  const mt=parseFloat(document.getElementById('g-mt').value)||0;
+  const cm=parseFloat(document.getElementById('g-cm').value)||0;
+  const costo=mt*cm;
+  const id='LEG-'+String(counters.Legatura++).padStart(3,'0');
+  const row=[id,lotto,document.getElementById('g-data').value,
+    document.getElementById('g-tipo').value,document.getElementById('g-cal').value,
+    mt,cm,costo,parseFloat(document.getElementById('g-ore').value)||0,
+    document.getElementById('g-note').value];
+  busy('btn-save-legatura',true);
+  try{
+    await apiPost({action:'append',sheet:'Legatura',row});
+    DB.Legatura.push({ID:id,Lotto:lotto,Data:row[2],TipoFilo:row[3],Calibro:row[4],
+      MetriStimati:mt,CostoFiloMetro:cm,CostoFili:costo,Ore:row[8],Note:row[9]});
+    renderLegatura();resetForm('g');toast('✓ Legatura salvata');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-legatura',false,'💾 Salva Legatura');
+}
+function renderLegatura(){
+  const tb=document.getElementById('tb-legatura');
+  document.getElementById('cnt-legatura').textContent=DB.Legatura.length+' op.';
+  if(!DB.Legatura.length){tb.innerHTML='<tr><td colspan="10" class="empty"><div class="eico">🔗</div>Nessuna legatura registrata</td></tr>';return;}
+  tb.innerHTML=DB.Legatura.map((g,i)=>`<tr>
+    <td><span class="cb">${g.ID}</span></td><td><span class="cb">${g.Lotto}</span></td>
+    <td>${g.Data||'—'}</td><td>${g.TipoFilo}</td>
+    <td style="text-align:center">${g.Calibro||'—'}</td>
+    <td style="text-align:center">${g.MetriStimati}m</td>
+    <td style="text-align:right">${fmt(g.CostoFiloMetro)}</td>
+    <td style="text-align:right;font-weight:500">${fmt(g.CostoFili)}</td>
+    <td style="text-align:center">${g.Ore}h</td>
+    <td><button class="btn btn-d" onclick="deleteOp('Legatura',${i},'${g.ID}')">Elimina</button></td>
+  </tr>`).join('');
+}
+
+// ── MATERIALI ────────────────────────────────────────────
+async function saveMateriale(){
+  const nome=document.getElementById('mat-nome').value.trim();
+  if(!nome){toast('⚠ Inserisci il nome del materiale!',true);return;}
+  const prezzo=parseFloat(document.getElementById('mat-prezzo').value)||0;
+  const unita=document.getElementById('mat-unita').value||'L';
+  const note=document.getElementById('mat-note').value;
+  const existing=DB.Materiali.findIndex(m=>(m.Nome||'').toLowerCase()===nome.toLowerCase());
+  busy('btn-save-mat',true);
+  try{
+    if(existing>=0){
+      await apiPost({action:'delete',sheet:'Materiali',keyCol:1,keyVal:DB.Materiali[existing].Nome});
+      DB.Materiali.splice(existing,1);
+    }
+    await apiPost({action:'append',sheet:'Materiali',row:[nome,prezzo,unita,note]});
+    DB.Materiali.push({Nome:nome,PrezzoLitro:prezzo,'Unità':unita,Note:note});
+    renderMateriali();buildTerrInputs();resetForm('mat');
+    toast(existing>=0?'✓ Materiale aggiornato':'✓ Materiale salvato');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-mat',false,'💾 Salva Materiale');
+}
+function renderMateriali(){
+  const tb=document.getElementById('tb-materiali');
+  document.getElementById('cnt-materiali').textContent=DB.Materiali.length+' materiali';
+  if(!DB.Materiali.length){
+    tb.innerHTML='<tr><td colspan="5" class="empty"><div class="eico">🏷️</div>Nessun materiale — aggiungi Akadama, Kiryu, Pomice e Terriccio 2ª Mano con i rispettivi prezzi</td></tr>';
+    return;
+  }
+  tb.innerHTML=DB.Materiali.map((m,i)=>`<tr>
+    <td style="font-weight:500">${m.Nome||'—'}</td>
+    <td style="text-align:right;font-weight:500;color:var(--moss)">${fmt(m.PrezzoLitro)}</td>
+    <td style="text-align:center">${m['Unità']||'L'}</td>
+    <td>${m.Note||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-s" style="padding:4px 10px;font-size:9px;margin-right:4px" onclick="prefillMat(${i})">✏️ Modifica</button>
+      <button class="btn btn-d" onclick="deleteMat(${i},'${(m.Nome||'').replace(/'/g,"\\'")}')">Elimina</button>
+    </td>
+  </tr>`).join('');
+}
+function prefillMat(i){
+  const m=DB.Materiali[i];
+  document.getElementById('mat-nome').value=m.Nome||'';
+  document.getElementById('mat-prezzo').value=m.PrezzoLitro||'';
+  document.getElementById('mat-unita').value=m['Unità']||'L';
+  document.getElementById('mat-note').value=m.Note||'';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function deleteMat(i,nome){
+  if(!confirm(`Eliminare "${nome}" dal listino?`))return;
+  try{
+    await apiPost({action:'delete',sheet:'Materiali',keyCol:1,keyVal:nome});
+    DB.Materiali.splice(i,1);renderMateriali();buildTerrInputs();toast('Materiale eliminato');
+  }catch(e){toast('⚠ Errore eliminazione',true);}
+}
+
+// ── DELETE GENERICA ──────────────────────────────────────
+async function deleteOp(sheet,i,id){
+  if(!confirm(`Eliminare l'operazione ${id}?`))return;
+  try{
+    await apiPost({action:'delete',sheet,keyCol:1,keyVal:id});
+    DB[sheet].splice(i,1);
+    if(sheet==='Rinvaso')renderRinvaso();
+    else if(sheet==='Potatura')renderPotatura();
+    else renderLegatura();
+    toast('Operazione eliminata');
+  }catch(e){toast('⚠ Errore eliminazione',true);}
+}
+
+// ── RIEPILOGO ────────────────────────────────────────────
+function renderRiepilogo(){
+  if(!DB.Lotti.length){
+    document.getElementById('kpis').innerHTML='';
+    document.getElementById('tb-riepilogo').innerHTML='<tr><td colspan="8" class="empty"><div class="eico">📊</div>Aggiungi lotti per vedere il riepilogo</td></tr>';
+    document.getElementById('cnt-riepilogo').textContent='0 lotti';
+    return;
+  }
+  const tariffa=parseFloat(document.getElementById('rie-tariffa')?.value)||0;
+  let totC=0,totP=0;
+  const rows=DB.Lotti.map(l=>{
+    // ore totali per lotto (rinvaso + potatura + legatura)
+    const oreR=DB.Rinvaso.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.Ore||0),0);
+    const oreP=DB.Potatura.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.Ore||0),0);
+    const oreG=DB.Legatura.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.Ore||0),0);
+    const oreTot=oreR+oreP+oreG;
+    const costoOre=oreTot*tariffa;
+    // costi materiali (terricci+vaso rinvaso, fili legatura)
+    const matR=DB.Rinvaso.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.CostoMateriali||0),0);
+    const matG=DB.Legatura.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.CostoFili||0),0);
+    const costoMat=matR+matG;
+    const tot=costoOre+costoMat;
+    const qty=Number(l['Quantità']||0);
+    totC+=tot;totP+=qty;
+    return{l,oreTot,costoOre,costoMat,tot,qty,marg:qty?tot/qty:null};
+  });
+  document.getElementById('cnt-riepilogo').textContent=rows.length+' lott'+(rows.length===1?'o':'i');
+  const totOre=rows.reduce((s,r)=>s+r.oreTot,0);
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Lotti Totali</div><div class="kpi-val">${rows.length}</div><div class="kpi-sub">${DB.Lotti.filter(l=>l.Stato==='Attivo').length} attivi</div></div>
+    <div class="kpi"><div class="kpi-lbl">Piante Totali</div><div class="kpi-val">${totP}</div><div class="kpi-sub">in tutti i lotti</div></div>
+    <div class="kpi"><div class="kpi-lbl">Ore Totali</div><div class="kpi-val">${totOre.toFixed(1)}h</div><div class="kpi-sub">a ${tariffa.toFixed(2)} €/h</div></div>
+    <div class="kpi"><div class="kpi-lbl">Costo Totale</div><div class="kpi-val">${totC.toFixed(0)} €</div><div class="kpi-sub">${DB.Rinvaso.length+DB.Potatura.length+DB.Legatura.length} operazioni</div></div>
+    <div class="kpi"><div class="kpi-lbl">Costo Medio / Pianta</div><div class="kpi-val">${totP?(totC/totP).toFixed(2)+' €':'—'}</div><div class="kpi-sub">costo marginale aggregato</div></div>`;
+  document.getElementById('tb-riepilogo').innerHTML=
+    rows.map(({l,oreTot,costoOre,costoMat,tot,qty,marg})=>`<tr>
+      <td><span class="cb">${l.Codice}</span></td>
+      <td style="text-align:center;font-weight:500">${qty}</td>
+      <td style="text-align:center">${oreTot.toFixed(1)}h</td>
+      <td style="text-align:right">${fmt(costoOre)}</td>
+      <td style="text-align:right">${fmt(costoMat)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--moss)">${fmt(tot)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--amber)">${marg!==null?fmt(marg):'—'}</td>
+      <td><span class="sb ${l.Stato==='Attivo'?'sb-a':l.Stato==='In lavorazione'?'sb-l':'sb-ar'}">${l.Stato||'—'}</span></td>
+    </tr>`).join('')+
+    `<tr style="background:var(--mist);font-weight:700">
+      <td style="color:var(--moss)">TOTALE</td><td style="text-align:center">${totP}</td>
+      <td style="text-align:center">${totOre.toFixed(1)}h</td>
+      <td style="text-align:right">${fmt(rows.reduce((s,r)=>s+r.costoOre,0))}</td>
+      <td style="text-align:right">${fmt(rows.reduce((s,r)=>s+r.costoMat,0))}</td>
+      <td style="text-align:right;color:var(--moss)">${fmt(totC)}</td>
+      <td style="text-align:right;color:var(--amber)">${totP?(totC/totP).toFixed(2)+' €':'—'}</td>
+      <td></td>
+    </tr>`;
+}
+
+loadAll();
+</script>
+</body>
+</html>
