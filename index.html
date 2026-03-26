@@ -23,18 +23,18 @@ body{font-family:'DM Mono',monospace;background:var(--paper);color:var(--ink);mi
 @keyframes spin{to{transform:rotate(360deg)}}
 #loader p{font-size:11px;letter-spacing:1.5px;color:var(--sage);text-transform:uppercase}
 header{background:var(--moss);position:sticky;top:0;z-index:200;box-shadow:0 2px 20px var(--shadow)}
-.h-inner{display:flex;align-items:stretch}
-.h-brand{padding:16px 28px;display:flex;align-items:center;gap:14px;border-right:1px solid rgba(255,255,255,.12);flex-shrink:0}
-.h-kanji{font-family:'Noto Serif JP',serif;font-size:26px;color:var(--bamboo);line-height:1}
+.h-inner{display:flex;flex-direction:column}
+.h-brand{padding:14px 24px;display:flex;align-items:center;gap:14px}
+.h-kanji{font-family:'Noto Serif JP',serif;font-size:24px;color:var(--bamboo);line-height:1}
 .h-texts{display:flex;flex-direction:column}
 .h-title{font-family:'Noto Serif JP',serif;font-size:13px;color:#fff;font-weight:600;letter-spacing:2px;text-transform:uppercase}
 .h-sub{font-size:9px;color:var(--bamboo);letter-spacing:1px;font-weight:300}
-nav{display:flex;align-items:stretch;flex:1;overflow-x:auto}
+nav{display:flex;align-items:stretch;overflow-x:auto;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.15)}
 nav button{background:none;border:none;color:rgba(255,255,255,.6);font-family:'DM Mono',monospace;
-  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;padding:0 16px;cursor:pointer;
-  transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap}
-nav button .ico{display:block;font-size:15px;margin-bottom:2px;text-align:center}
-nav button:hover{color:#fff}
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:10px 18px;cursor:pointer;
+  transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap;flex:1;min-width:60px}
+nav button .ico{display:block;font-size:14px;margin-bottom:2px;text-align:center}
+nav button:hover{color:#fff;background:rgba(255,255,255,.06)}
 nav button.active{color:var(--bamboo);border-bottom-color:var(--bamboo);background:rgba(255,255,255,.04)}
 main{max-width:1180px;margin:0 auto;padding:28px 20px}
 .section{display:none;animation:fadeIn .3s ease}
@@ -88,6 +88,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
 /* TABLE */
 .twrap{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:auto;box-shadow:0 4px 20px var(--shadow)}
 .twrap table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+.twrap table caption{display:none}
 .twrap thead tr{background:var(--moss)}
 .twrap thead th{font-family:'Noto Serif JP',serif;font-size:9px;font-weight:600;color:rgba(255,255,255,.85);
   letter-spacing:1px;text-transform:uppercase;padding:13px 14px;text-align:left;white-space:nowrap}
@@ -115,8 +116,11 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
 #toast.show{opacity:1;transform:none}
 #toast.err{background:var(--err)}
 @media(max-width:640px){
-  .h-brand{padding:12px 16px}
-  nav button{padding:0 10px;font-size:9px}
+  .h-brand{padding:10px 16px}
+  .h-kanji{font-size:20px}
+  .h-title{font-size:11px}
+  nav button{padding:8px 10px;font-size:9px;letter-spacing:.5px}
+  nav button .ico{font-size:13px}
   main{padding:14px 12px}
   .fgrid,.terr-grid{grid-template-columns:1fr 1fr}
 }
@@ -354,7 +358,17 @@ function busy(id,on,lbl){
 }
 
 async function apiGet(sheet){const r=await fetch(`${API}?sheet=${sheet}`);return r.json();}
-async function apiPost(body){const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});return r.json();}
+async function apiPost(body){
+  // Apps Script richiede il redirect — usiamo fetch con redirect follow
+  const r=await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(body),
+    redirect:'follow'
+  });
+  const text=await r.text();
+  try{return JSON.parse(text);}catch(e){return{status:'ok'};}
+}
 
 async function loadAll(){
   loader(true);
