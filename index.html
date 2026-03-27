@@ -158,7 +158,8 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
       <div class="fgrid">
         <div class="fg"><label>Specie (3 lettere)</label><input id="l-sp3" maxlength="3" placeholder="ACE" oninput="this.value=this.value.toUpperCase();genCodice()"></div>
         <div class="fg"><label>Anno (2 cifre)</label><input id="l-yr" maxlength="2" placeholder="25" oninput="genCodice()"></div>
-        <div class="fg"><label>Codice Lotto (auto)</label><input id="l-cod" readonly placeholder="ACE-25-001"></div>
+        <div class="fg"><label>Progressivo</label><input id="l-prog" maxlength="6" placeholder="001" oninput="genCodice()"></div>
+        <div class="fg"><label>Codice Lotto (anteprima)</label><input id="l-cod" readonly placeholder="ACE-25-001"></div>
         <div class="fg"><label>Nome Specie</label><input id="l-nome" placeholder="Acer palmatum"></div>
         <div class="fg"><label>Quantità Piante</label><input id="l-qty" type="number" min="1" placeholder="10"></div>
         <div class="fg"><label>Data Ingresso</label><input id="l-data" type="date"></div>
@@ -168,7 +169,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
         <div class="fg full"><label>Note</label><textarea id="l-note" placeholder="Osservazioni…"></textarea></div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-s" onclick="resetForm('l')">Pulisci</button>
+        <button class="btn btn-s" onclick="cancelEdit()">Pulisci</button>
         <button class="btn btn-p" id="btn-save-lotto" onclick="saveLotto()">💾 Salva Lotto</button>
       </div>
     </div>
@@ -341,6 +342,7 @@ const TERRICCI=[
 const DB={Lotti:[],Rinvaso:[],Potatura:[],Legatura:[],Materiali:[]};
 const TABS=['lotti','rinvaso','potatura','legatura','materiali','riepilogo'];
 let counters={Rinvaso:1,Potatura:1,Legatura:1};
+let editingLottoIndex=-1; // -1 = nuovo lotto, >= 0 = modifica
 
 function toast(msg,err=false){
   const t=document.getElementById('toast');
@@ -404,7 +406,8 @@ function showTab(id){
 function genCodice(){
   const sp=(document.getElementById('l-sp3').value||'___').padEnd(3,'_').substring(0,3);
   const yr=(document.getElementById('l-yr').value||'__').padStart(2,'0').substring(0,2);
-  document.getElementById('l-cod').value=`${sp}-${yr}-${String(DB.Lotti.length+1).padStart(3,'0')}`;
+  const prog=(document.getElementById('l-prog').value||'___');
+  document.getElementById('l-cod').value=`${sp}-${yr}-${prog}`;
 }
 
 // ── TERRICCI ─────────────────────────────────────────────
@@ -473,25 +476,70 @@ function resetForm(pfx){
 }
 
 // ── LOTTI ────────────────────────────────────────────────
+function editLotto(i){
+  const l=DB.Lotti[i];
+  editingLottoIndex=i;
+  // Popola il form con i dati del lotto
+  document.getElementById('l-sp3').value=l.Specie?.substring(0,3)||l.Codice?.substring(0,3)||'';
+  document.getElementById('l-yr').value=l.Anno||'';
+  document.getElementById('l-prog').value=l.Progressivo||l.Codice?.split('-')[2]||'';
+  document.getElementById('l-nome').value=l.Specie||'';
+  document.getElementById('l-qty').value=l['Quantità']||'';
+  document.getElementById('l-data').value=l.DataIngresso||'';
+  document.getElementById('l-prov').value=l.Provenienza||'';
+  document.getElementById('l-stato').value=l.Stato||'Attivo';
+  document.getElementById('l-sub').value=l.Sottogruppo||'';
+  document.getElementById('l-note').value=l.Note||'';
+  genCodice();
+  // Aggiorna UI form in modalità modifica
+  document.getElementById('btn-save-lotto').textContent='💾 Aggiorna Lotto';
+  document.getElementById('btn-save-lotto').style.background='var(--amber)';
+  document.querySelector('.fcard-hdr h3').textContent='Modifica Lotto: '+l.Codice;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function cancelEdit(){
+  editingLottoIndex=-1;
+  resetForm('l');
+  document.getElementById('btn-save-lotto').textContent='💾 Salva Lotto';
+  document.getElementById('btn-save-lotto').style.background='';
+  document.querySelector('.fcard-hdr h3').textContent='Nuovo Lotto';
+}
+
 async function saveLotto(){
   const cod=document.getElementById('l-cod').value;
-  if(!cod||cod.includes('_')){toast('⚠ Compila specie e anno!',true);return;}
+  const progVal=document.getElementById('l-prog').value.trim();
+  if(!document.getElementById('l-sp3').value||document.getElementById('l-yr').value.length<2){toast('⚠ Compila specie e anno!',true);return;}
+  if(!progVal){toast('⚠ Inserisci il progressivo!',true);return;}
   const qty=parseInt(document.getElementById('l-qty').value);
   if(!qty||qty<1){toast('⚠ Inserisci quantità piante!',true);return;}
   const yr=document.getElementById('l-yr').value;
-  const prog=cod.split('-')[2];
+  const prog=document.getElementById('l-prog').value.trim();
   const sub=document.getElementById('l-sub').value.trim();
   const row=[cod,document.getElementById('l-nome').value||'—',yr,prog,qty,
     document.getElementById('l-data').value,document.getElementById('l-prov').value||'—',
     document.getElementById('l-stato').value,sub,document.getElementById('l-note').value];
   busy('btn-save-lotto',true);
   try{
-    await apiPost({action:'append',sheet:'Lotti',row});
-    DB.Lotti.push({Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
-      DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]});
-    renderLotti();refreshSelects();genCodice();resetForm('l');toast('✓ Lotto salvato');
+    if(editingLottoIndex>=0){
+      // Modifica: elimina vecchia riga e inserisce quella aggiornata
+      const oldCod=DB.Lotti[editingLottoIndex].Codice;
+      await apiPost({action:'delete',sheet:'Lotti',keyCol:1,keyVal:oldCod});
+      await apiPost({action:'append',sheet:'Lotti',row});
+      DB.Lotti[editingLottoIndex]={Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
+        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]};
+      toast('✓ Lotto aggiornato');
+    } else {
+      // Nuovo lotto
+      await apiPost({action:'append',sheet:'Lotti',row});
+      DB.Lotti.push({Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
+        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]});
+      toast('✓ Lotto salvato');
+    }
+    cancelEdit();
+    renderLotti();refreshSelects();
   }catch(e){toast('⚠ Errore salvataggio',true);}
-  busy('btn-save-lotto',false,'💾 Salva Lotto');
+  busy('btn-save-lotto',false, editingLottoIndex>=0?'💾 Aggiorna Lotto':'💾 Salva Lotto');
 }
 function renderLotti(){
   const tb=document.getElementById('tb-lotti');
@@ -503,7 +551,10 @@ function renderLotti(){
     <td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
     <td>${l.DataIngresso||'—'}</td><td>${l.Provenienza||'—'}</td>
     <td><span class="sb ${l.Stato==='Attivo'?'sb-a':l.Stato==='In lavorazione'?'sb-l':'sb-ar'}">${l.Stato||'—'}</span></td>
-    <td><button class="btn btn-d" onclick="deleteLotto(${i},'${l.Codice}')">Elimina</button></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-s" style="padding:4px 10px;font-size:9px;margin-right:4px" onclick="editLotto(${i})">✏️ Modifica</button>
+      <button class="btn btn-d" onclick="deleteLotto(${i},'${l.Codice}')">Elimina</button>
+    </td>
   </tr>`).join('');
 }
 async function deleteLotto(i,cod){
