@@ -204,7 +204,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
     </div>
   </div>
   <div class="twrap"><table>
-    <thead><tr><th>Codice</th><th>Specie</th><th>Anno</th><th>Piante</th><th>Ingresso</th><th>Provenienza</th><th>Stato</th><th></th></tr></thead>
+    <thead><tr><th>Codice</th><th>Specie</th><th>Piante</th><th>Ingresso</th><th>Provenienza</th><th>Stato</th><th></th></tr></thead>
     <tbody id="tb-lotti"></tbody>
   </table></div>
 </section>
@@ -427,6 +427,7 @@ function toast(msg,err=false){
 }
 function fmt(n){return(isNaN(n)||n==null||n==='')?'—':Number(n).toFixed(2).replace('.',',')+' €';}
 function fmtL(n){return(isNaN(n)||n==null||n===''||Number(n)===0)?'—':Number(n).toFixed(2)+' L';}
+function fmtData(d){if(!d||d==='—')return'—';const s=String(d);const p=s.includes('T')?s.split('T')[0]:s.split(' ')[0];return p||'—';}
 function loader(on){document.getElementById('loader').classList.toggle('hidden',!on);}
 function busy(id,on,lbl){
   const b=document.getElementById(id);if(!b)return;
@@ -570,16 +571,18 @@ function resetForm(pfx){
 function editLotto(i){
   const l=DB.Lotti[i];
   editingLottoIndex=i;
-  // Popola il form con i dati del lotto
-  document.getElementById('l-sp3').value=l.Specie?.substring(0,3)||l.Codice?.substring(0,3)||'';
-  document.getElementById('l-yr').value=l.Anno||'';
-  document.getElementById('l-prog').value=l.Progressivo||l.Codice?.split('-')[2]||'';
+  // Codice specie = prima parte del codice lotto (es. "ACE" da "ACE-25-001")
+  const parts=(l.Codice||'').split('-');
+  document.getElementById('l-sp3').value=parts[0]||'';
+  document.getElementById('l-yr').value=parts[1]||l.Anno||'';
+  document.getElementById('l-prog').value=parts.slice(2).join('-')||l.Progressivo||'';
   document.getElementById('l-nome').value=l.Specie||'';
   document.getElementById('l-qty').value=l['Quantità']||'';
-  document.getElementById('l-data').value=l.DataIngresso||'';
+  // La data da Sheets può arrivare come "2025-01-15T00:00:00.000Z" — prendiamo solo YYYY-MM-DD
+  const rawData=String(l.DataIngresso||'');
+  document.getElementById('l-data').value=rawData.includes('T')?rawData.split('T')[0]:rawData;
   document.getElementById('l-prov').value=l.Provenienza||'';
-  document.getElementById('l-stato').value=l.Stato||'Attivo';
-
+  document.getElementById('l-stato').value=l.Stato||'Sperimentale';
   document.getElementById('l-note').value=l.Note||'';
   genCodice();
   // Aggiorna UI form in modalità modifica
@@ -600,7 +603,7 @@ function cancelEdit(){
 async function saveLotto(){
   const cod=document.getElementById('l-cod').value;
   const progVal=document.getElementById('l-prog').value.trim();
-  if(!document.getElementById('l-sp3').value||document.getElementById('l-yr').value.length<2){toast('⚠ Compila specie e anno!',true);return;}
+  if(!document.getElementById('l-sp3').value){toast('⚠ Inserisci il codice specie!',true);return;}
   if(!progVal){toast('⚠ Inserisci il progressivo!',true);return;}
   const qty=parseInt(document.getElementById('l-qty').value);
   if(!qty||qty<1){toast('⚠ Inserisci quantità piante!',true);return;}
@@ -634,15 +637,15 @@ async function saveLotto(){
 function renderLotti(){
   const tb=document.getElementById('tb-lotti');
   document.getElementById('cnt-lotti').textContent=DB.Lotti.length+' lott'+(DB.Lotti.length===1?'o':'i');
-  if(!DB.Lotti.length){tb.innerHTML='<tr><td colspan="8" class="empty"><div class="eico">🌱</div>Nessun lotto registrato</td></tr>';return;}
+  if(!DB.Lotti.length){tb.innerHTML='<tr><td colspan="7" class="empty"><div class="eico">🌱</div>Nessun lotto registrato</td></tr>';return;}
   tb.innerHTML=DB.Lotti.map((l,i)=>{
     const statoCls=l.Stato==='Sperimentale'?'sb-sp':l.Stato==='Produzione'?'sb-pr':'sb-ar';
     const promoBtn=l.Stato==='Sperimentale'
       ?`<button class="btn" style="padding:4px 10px;font-size:9px;margin-right:4px;background:#e8f0fe;color:#1a5276;border:1px solid #aac4e8" onclick="apriModal(${i})">🌱 Promuovi</button>`:'';
     return`<tr>
-    <td><span class="cb">${l.Codice}</span></td><td>${l.Specie||'—'}</td><td>${l.Anno||'—'}</td>
-<td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
-    <td>${l.DataIngresso||'—'}</td><td>${l.Provenienza||'—'}</td>
+    <td><span class="cb">${l.Codice}</span></td><td>${l.Specie||'—'}</td>
+    <td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
+    <td>${fmtData(l.DataIngresso)}</td><td>${l.Provenienza||'—'}</td>
     <td><span class="sb ${statoCls}">${l.Stato||'—'}</span></td>
     <td style="white-space:nowrap">
       ${promoBtn}
