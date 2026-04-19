@@ -115,6 +115,35 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
   opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999}
 #toast.show{opacity:1;transform:none}
 #toast.err{background:var(--err)}
+/* STATO BADGES SPERIMENTALE/PRODUZIONE */
+.sb-sp{background:#e8f0fe;color:#1a5276;border:1px solid #aac4e8}
+.sb-pr{background:#e8f5e1;color:var(--sage);border:1px solid var(--border)}
+/* PROGRESS BAR attecchimento */
+.pbar-wrap{background:#f0f0f0;border-radius:20px;height:8px;overflow:hidden;min-width:80px}
+.pbar{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--sage),var(--bamboo));transition:width .4s}
+/* MODAL PROMOZIONE */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-bg.hidden{display:none}
+.modal{background:#fff;border-radius:14px;padding:28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-family:'Noto Serif JP',serif;font-size:16px;color:var(--moss);margin-bottom:6px}
+.modal p{font-size:11px;color:#888;margin-bottom:20px;line-height:1.6}
+.modal .fgrid{margin-bottom:16px}
+.btn-promo{background:linear-gradient(135deg,var(--moss),var(--sage));color:#fff;font-size:11px;
+  padding:11px 24px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Mono',monospace;
+  letter-spacing:1px;text-transform:uppercase;width:100%;margin-top:8px;transition:opacity .2s}
+.btn-promo:hover{opacity:.88}
+/* VARIANTE CARD nella sperimentazione */
+.var-card{background:var(--mist);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.var-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.var-tag{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--moss);
+  background:#fff;border:1px solid var(--border);padding:2px 8px;border-radius:4px}
+.var-pct{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:600;color:var(--sage)}
+.var-conclusione{font-size:11px;color:#666;margin-top:8px;font-style:italic;line-height:1.5}
+/* LOG CARD */
+.log-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:14px;box-shadow:0 2px 8px var(--shadow)}
+.log-card-hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.log-lotto{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--moss)}
+.log-specie{font-size:11px;color:#888}
 @media(max-width:640px){
   .h-brand{padding:10px 16px}
   .h-kanji{font-size:20px}
@@ -139,6 +168,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
   </div>
   <nav>
     <button class="active" onclick="showTab('lotti')"><span class="ico">🌿</span>Lotti</button>
+    <button onclick="showTab('sperimentazione')"><span class="ico">🔬</span>Sperim.</button>
     <button onclick="showTab('rinvaso')"><span class="ico">🪴</span>Rinvaso</button>
     <button onclick="showTab('potatura')"><span class="ico">✂️</span>Potatura</button>
     <button onclick="showTab('legatura')"><span class="ico">🔗</span>Legatura</button>
@@ -156,7 +186,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
     <div class="fcard-hdr"><span>➕</span><h3>Nuovo Lotto</h3></div>
     <div class="fcard-body">
       <div class="fgrid">
-        <div class="fg"><label>Specie (3 lettere)</label><input id="l-sp3" maxlength="3" placeholder="ACE" oninput="this.value=this.value.toUpperCase();genCodice()"></div>
+        <div class="fg"><label>Specie (3 lettere)</label><input id="l-sp3" maxlength="6" placeholder="es. ACE, JP01…" oninput="genCodice()"></div>
         <div class="fg"><label>Anno (2 cifre)</label><input id="l-yr" maxlength="2" placeholder="25" oninput="genCodice()"></div>
         <div class="fg"><label>Progressivo</label><input id="l-prog" maxlength="6" placeholder="001" oninput="genCodice()"></div>
         <div class="fg"><label>Codice Lotto (anteprima)</label><input id="l-cod" readonly placeholder="ACE-25-001"></div>
@@ -164,8 +194,7 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
         <div class="fg"><label>Quantità Piante</label><input id="l-qty" type="number" min="1" placeholder="10"></div>
         <div class="fg"><label>Data Ingresso</label><input id="l-data" type="date"></div>
         <div class="fg"><label>Provenienza</label><input id="l-prov" placeholder="Vivaio / Importazione…"></div>
-        <div class="fg"><label>Stato</label><select id="l-stato"><option>Attivo</option><option>In lavorazione</option><option>Archiviato</option></select></div>
-        <div class="fg"><label>Sottogruppo</label><input id="l-sub" maxlength="4" placeholder="A, B, C…" oninput="this.value=this.value.toUpperCase()" title="Lettera o codice che identifica una variante del lotto (es. A = vasi ø14, B = vasi ø16)"></div>
+        <div class="fg"><label>Stato</label><select id="l-stato"><option>Sperimentale</option><option>Produzione</option><option>Archiviato</option></select></div>
         <div class="fg full"><label>Note</label><textarea id="l-note" placeholder="Osservazioni…"></textarea></div>
       </div>
       <div class="btn-row">
@@ -175,10 +204,56 @@ main{max-width:1180px;margin:0 auto;padding:28px 20px}
     </div>
   </div>
   <div class="twrap"><table>
-    <thead><tr><th>Codice</th><th>Specie</th><th>Anno</th><th>Sottogruppo</th><th>Piante</th><th>Ingresso</th><th>Provenienza</th><th>Stato</th><th></th></tr></thead>
+    <thead><tr><th>Codice</th><th>Specie</th><th>Anno</th><th>Piante</th><th>Ingresso</th><th>Provenienza</th><th>Stato</th><th></th></tr></thead>
     <tbody id="tb-lotti"></tbody>
   </table></div>
 </section>
+
+<!-- SPERIMENTAZIONE -->
+<section id="sec-sperimentazione" class="section">
+  <div class="sec-hdr"><h2 class="sec-title">Sperimentazione</h2><span class="sec-badge" id="cnt-sperim">—</span></div>
+
+  <div class="fcard">
+    <div class="fcard-hdr"><span>🔬</span><h3>Registra Variante Sperimentale</h3></div>
+    <div class="fcard-body">
+      <div class="fgrid">
+        <div class="fg"><label>Lotto (solo Sperimentali)</label><select id="sp-lotto"><option value="">— seleziona —</option></select></div>
+        <div class="fg"><label>Variante (A, B, C…)</label><input id="sp-var" maxlength="4" placeholder="A" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="fg"><label>Nome Variabile Testata</label><input id="sp-nome" placeholder="es. Substrato torba pura"></div>
+        <div class="fg"><label>Talee Inserite</label><input id="sp-ins" type="number" min="0" placeholder="100" oninput="calcAttecch()"></div>
+        <div class="fg"><label>Talee Attecchite</label><input id="sp-att" type="number" min="0" placeholder="72" oninput="calcAttecch()"></div>
+        <div class="fg"><label>% Attecchimento</label><input id="sp-pct" readonly placeholder="calcolato auto"></div>
+        <div class="fg"><label>Data Inizio</label><input id="sp-d1" type="date"></div>
+        <div class="fg"><label>Data Fine / Verifica</label><input id="sp-d2" type="date"></div>
+        <div class="fg full"><label>Descrizione Variabile</label><input id="sp-desc" placeholder="Dettagli del parametro testato…"></div>
+        <div class="fg full"><label>Conclusioni</label><textarea id="sp-concl" placeholder="Risultati, osservazioni, cosa hai imparato da questa variante…"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="resetForm('sp')">Pulisci</button>
+        <button class="btn btn-p" id="btn-save-sperim" onclick="saveSperim()">💾 Salva Variante</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG PER LOTTO -->
+  <div id="sperim-log"></div>
+</section>
+
+<!-- MODAL PROMOZIONE -->
+<div class="modal-bg hidden" id="modal-promo">
+  <div class="modal">
+    <h3>🌱 Promuovi a Produzione</h3>
+    <p id="modal-promo-desc">Indica quante piante hanno attecchito e passano in fase di produzione.</p>
+    <div class="fgrid">
+      <div class="fg"><label>Piante che passano in produzione</label><input id="promo-qty" type="number" min="1" placeholder="es. 80"></div>
+      <div class="fg"><label>Note promozione</label><input id="promo-note" placeholder="Osservazioni finali…"></div>
+    </div>
+    <button class="btn-promo" onclick="confermaPromozione()">✅ Conferma Promozione</button>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn btn-s" style="font-size:10px" onclick="chiudiModal()">Annulla</button>
+    </div>
+  </div>
+</div>
 
 <!-- RINVASO -->
 <section id="sec-rinvaso" class="section">
@@ -339,9 +414,10 @@ const TERRICCI=[
   {key:'LitriSecondaMano', label:'Terriccio 2ª Mano',  ico:'⬛'},
 ];
 
-const DB={Lotti:[],Rinvaso:[],Potatura:[],Legatura:[],Materiali:[]};
-const TABS=['lotti','rinvaso','potatura','legatura','materiali','riepilogo'];
-let counters={Rinvaso:1,Potatura:1,Legatura:1};
+const DB={Lotti:[],Sperimentazione:[],Rinvaso:[],Potatura:[],Legatura:[],Materiali:[]};
+let promoLottoIndex=-1;
+const TABS=['lotti','sperimentazione','rinvaso','potatura','legatura','materiali','riepilogo'];
+let counters={Rinvaso:1,Potatura:1,Legatura:1,Sperimentazione:1};
 let editingLottoIndex=-1; // -1 = nuovo lotto, >= 0 = modifica
 
 function toast(msg,err=false){
@@ -375,21 +451,22 @@ async function apiPost(body){
 async function loadAll(){
   loader(true);
   try{
-    const[L,R,P,G,M]=await Promise.all([
-      apiGet('Lotti'),apiGet('Rinvaso'),apiGet('Potatura'),apiGet('Legatura'),apiGet('Materiali')
+    const[L,S,R,P,G,M]=await Promise.all([
+      apiGet('Lotti'),apiGet('Sperimentazione'),apiGet('Rinvaso'),apiGet('Potatura'),apiGet('Legatura'),apiGet('Materiali')
     ]);
-    DB.Lotti=L||[];DB.Rinvaso=R||[];DB.Potatura=P||[];DB.Legatura=G||[];DB.Materiali=M||[];
+    DB.Lotti=L||[];DB.Sperimentazione=S||[];DB.Rinvaso=R||[];DB.Potatura=P||[];DB.Legatura=G||[];DB.Materiali=M||[];
     const maxN=(arr,k)=>arr.reduce((m,r)=>{const n=parseInt((String(r[k]||'')).split('-').pop()||0);return n>m?n:m;},0);
     counters.Rinvaso=maxN(DB.Rinvaso,'ID')+1;
     counters.Potatura=maxN(DB.Potatura,'ID')+1;
     counters.Legatura=maxN(DB.Legatura,'ID')+1;
+    counters.Sperimentazione=maxN(DB.Sperimentazione,'VarianteLotto')+1;
     renderAll();
   }catch(e){toast('⚠ Errore connessione al database',true);console.error(e);}
   loader(false);
 }
 
 function renderAll(){
-  renderLotti();buildTerrInputs();renderRinvaso();
+  renderLotti();renderSperim();buildTerrInputs();renderRinvaso();
   renderPotatura();renderLegatura();renderMateriali();
   refreshSelects();genCodice();
 }
@@ -401,10 +478,11 @@ function showTab(id){
   });
   if(id==='riepilogo')renderRiepilogo();
   if(id==='rinvaso')buildTerrInputs();
+  if(id==='sperimentazione')renderSperim();
 }
 
 function genCodice(){
-  const sp=(document.getElementById('l-sp3').value||'___').padEnd(3,'_').substring(0,3);
+  const sp=document.getElementById('l-sp3').value||'___';
   const yr=(document.getElementById('l-yr').value||'__').padStart(2,'0').substring(0,2);
   const prog=(document.getElementById('l-prog').value||'___');
   document.getElementById('l-cod').value=`${sp}-${yr}-${prog}`;
@@ -452,16 +530,29 @@ function calcLeg(){
 }
 
 function refreshSelects(){
+  // Rinvaso/Potatura/Legatura: solo lotti in Produzione
   ['r-lotto','p-lotto','g-lotto'].forEach(id=>{
     const sel=document.getElementById(id),cur=sel.value;
     sel.innerHTML='<option value="">— seleziona —</option>';
-    DB.Lotti.forEach(l=>{
+    DB.Lotti.filter(l=>l.Stato==='Produzione').forEach(l=>{
       const o=document.createElement('option');
       o.value=l.Codice;o.textContent=`${l.Codice} — ${l.Specie||''}`;
       sel.appendChild(o);
     });
     sel.value=cur;
   });
+  // Sperimentazione: solo lotti Sperimentali
+  const spSel=document.getElementById('sp-lotto');
+  if(spSel){
+    const cur=spSel.value;
+    spSel.innerHTML='<option value="">— seleziona —</option>';
+    DB.Lotti.filter(l=>l.Stato==='Sperimentale').forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.Codice;o.textContent=`${l.Codice} — ${l.Specie||''}`;
+      spSel.appendChild(o);
+    });
+    spSel.value=cur;
+  }
 }
 
 function resetForm(pfx){
@@ -488,7 +579,7 @@ function editLotto(i){
   document.getElementById('l-data').value=l.DataIngresso||'';
   document.getElementById('l-prov').value=l.Provenienza||'';
   document.getElementById('l-stato').value=l.Stato||'Attivo';
-  document.getElementById('l-sub').value=l.Sottogruppo||'';
+
   document.getElementById('l-note').value=l.Note||'';
   genCodice();
   // Aggiorna UI form in modalità modifica
@@ -515,10 +606,9 @@ async function saveLotto(){
   if(!qty||qty<1){toast('⚠ Inserisci quantità piante!',true);return;}
   const yr=document.getElementById('l-yr').value;
   const prog=document.getElementById('l-prog').value.trim();
-  const sub=document.getElementById('l-sub').value.trim();
   const row=[cod,document.getElementById('l-nome').value||'—',yr,prog,qty,
     document.getElementById('l-data').value,document.getElementById('l-prov').value||'—',
-    document.getElementById('l-stato').value,sub,document.getElementById('l-note').value];
+    document.getElementById('l-stato').value,document.getElementById('l-note').value];
   busy('btn-save-lotto',true);
   try{
     if(editingLottoIndex>=0){
@@ -527,13 +617,13 @@ async function saveLotto(){
       await apiPost({action:'delete',sheet:'Lotti',keyCol:1,keyVal:oldCod});
       await apiPost({action:'append',sheet:'Lotti',row});
       DB.Lotti[editingLottoIndex]={Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
-        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]};
+        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Note:row[8]};
       toast('✓ Lotto aggiornato');
     } else {
       // Nuovo lotto
       await apiPost({action:'append',sheet:'Lotti',row});
       DB.Lotti.push({Codice:cod,Specie:row[1],Anno:yr,Progressivo:prog,'Quantità':qty,
-        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Sottogruppo:sub,Note:row[9]});
+        DataIngresso:row[5],Provenienza:row[6],Stato:row[7],Note:row[8]});
       toast('✓ Lotto salvato');
     }
     cancelEdit();
@@ -544,18 +634,22 @@ async function saveLotto(){
 function renderLotti(){
   const tb=document.getElementById('tb-lotti');
   document.getElementById('cnt-lotti').textContent=DB.Lotti.length+' lott'+(DB.Lotti.length===1?'o':'i');
-  if(!DB.Lotti.length){tb.innerHTML='<tr><td colspan="9" class="empty"><div class="eico">🌱</div>Nessun lotto registrato</td></tr>';return;}
-  tb.innerHTML=DB.Lotti.map((l,i)=>`<tr>
+  if(!DB.Lotti.length){tb.innerHTML='<tr><td colspan="8" class="empty"><div class="eico">🌱</div>Nessun lotto registrato</td></tr>';return;}
+  tb.innerHTML=DB.Lotti.map((l,i)=>{
+    const statoCls=l.Stato==='Sperimentale'?'sb-sp':l.Stato==='Produzione'?'sb-pr':'sb-ar';
+    const promoBtn=l.Stato==='Sperimentale'
+      ?`<button class="btn" style="padding:4px 10px;font-size:9px;margin-right:4px;background:#e8f0fe;color:#1a5276;border:1px solid #aac4e8" onclick="apriModal(${i})">🌱 Promuovi</button>`:'';
+    return`<tr>
     <td><span class="cb">${l.Codice}</span></td><td>${l.Specie||'—'}</td><td>${l.Anno||'—'}</td>
-    <td style="text-align:center">${l.Sottogruppo?`<span class="cb" style="color:var(--amber);border-color:#f5d58a">${l.Sottogruppo}</span>`:'—'}</td>
-    <td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
+<td style="text-align:center;font-weight:500">${l['Quantità']||'—'}</td>
     <td>${l.DataIngresso||'—'}</td><td>${l.Provenienza||'—'}</td>
-    <td><span class="sb ${l.Stato==='Attivo'?'sb-a':l.Stato==='In lavorazione'?'sb-l':'sb-ar'}">${l.Stato||'—'}</span></td>
+    <td><span class="sb ${statoCls}">${l.Stato||'—'}</span></td>
     <td style="white-space:nowrap">
+      ${promoBtn}
       <button class="btn btn-s" style="padding:4px 10px;font-size:9px;margin-right:4px" onclick="editLotto(${i})">✏️ Modifica</button>
       <button class="btn btn-d" onclick="deleteLotto(${i},'${l.Codice}')">Elimina</button>
     </td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 async function deleteLotto(i,cod){
   if(!confirm(`Eliminare il lotto ${cod}?`))return;
@@ -563,6 +657,121 @@ async function deleteLotto(i,cod){
     await apiPost({action:'delete',sheet:'Lotti',keyCol:1,keyVal:cod});
     DB.Lotti.splice(i,1);renderLotti();refreshSelects();genCodice();toast('Lotto eliminato');
   }catch(e){toast('⚠ Errore eliminazione',true);}
+}
+
+// ── SPERIMENTAZIONE ──────────────────────────────────────
+function calcAttecch(){
+  const ins=parseFloat(document.getElementById('sp-ins').value)||0;
+  const att=parseFloat(document.getElementById('sp-att').value)||0;
+  document.getElementById('sp-pct').value=ins>0?(att/ins*100).toFixed(1)+'%':'';
+}
+
+async function saveSperim(){
+  const lotto=document.getElementById('sp-lotto').value;
+  if(!lotto){toast('⚠ Seleziona un lotto!',true);return;}
+  const varVal=document.getElementById('sp-var').value.trim();
+  if(!varVal){toast('⚠ Inserisci la variante (A, B…)',true);return;}
+  const ins=parseFloat(document.getElementById('sp-ins').value)||0;
+  const att=parseFloat(document.getElementById('sp-att').value)||0;
+  const pct=ins>0?(att/ins*100).toFixed(1):0;
+  const id=`${lotto}-${varVal}`;
+  const row=[id,lotto,document.getElementById('sp-nome').value,
+    document.getElementById('sp-desc').value,ins,att,pct,
+    document.getElementById('sp-d1').value,document.getElementById('sp-d2').value,
+    document.getElementById('sp-concl').value];
+  busy('btn-save-sperim',true);
+  try{
+    // se esiste già questa variante, sostituisci
+    const ex=DB.Sperimentazione.findIndex(s=>s.VarianteLotto===id);
+    if(ex>=0){
+      await apiPost({action:'delete',sheet:'Sperimentazione',keyCol:1,keyVal:id});
+      DB.Sperimentazione.splice(ex,1);
+    }
+    await apiPost({action:'append',sheet:'Sperimentazione',row});
+    DB.Sperimentazione.push({VarianteLotto:id,Lotto:lotto,NomeVariabile:row[2],
+      Descrizione:row[3],TaleeInserite:ins,TaleeAttecchite:att,PctAttecchimento:pct,
+      DataInizio:row[7],DataFine:row[8],Conclusioni:row[9]});
+    renderSperim();resetForm('sp');toast('✓ Variante salvata');
+  }catch(e){toast('⚠ Errore salvataggio',true);}
+  busy('btn-save-sperim',false,'💾 Salva Variante');
+}
+
+function renderSperim(){
+  const container=document.getElementById('sperim-log');
+  if(!container)return;
+  const lottiSp=DB.Lotti.filter(l=>l.Stato==='Sperimentale');
+  const lottiConDati=[...new Set(DB.Sperimentazione.map(s=>s.Lotto))];
+  const tuttiLotti=[...new Set([...lottiSp.map(l=>l.Codice),...lottiConDati])];
+  document.getElementById('cnt-sperim').textContent=DB.Sperimentazione.length+' varianti';
+  if(!tuttiLotti.length){
+    container.innerHTML='<div class="empty"><div class="eico">🔬</div>Nessun lotto sperimentale — crea un lotto con stato "Sperimentale"</div>';
+    return;
+  }
+  container.innerHTML=tuttiLotti.map(cod=>{
+    const lotto=DB.Lotti.find(l=>l.Codice===cod);
+    const varianti=DB.Sperimentazione.filter(s=>s.Lotto===cod);
+    const varHtml=varianti.length?varianti.map(v=>{
+      const pct=parseFloat(v.PctAttecchimento)||0;
+      const barColor=pct>=70?'var(--sage)':pct>=40?'var(--amber)':'var(--err)';
+      return`<div class="var-card">
+        <div class="var-card-hdr">
+          <div>
+            <span class="var-tag">Variante ${v.VarianteLotto.split('-').pop()}</span>
+            <span style="font-size:10px;color:#888;margin-left:8px">${v.NomeVariabile||''}</span>
+          </div>
+          <span class="var-pct" style="color:${barColor}">${pct.toFixed(1)}%</span>
+        </div>
+        <div style="font-size:10px;color:#aaa;margin-bottom:6px">${v.TaleeAttecchite||0} / ${v.TaleeInserite||0} talee attecchite ${v.DataInizio?'· '+v.DataInizio:''} ${v.DataFine?'→ '+v.DataFine:''}</div>
+        <div class="pbar-wrap"><div class="pbar" style="width:${Math.min(pct,100)}%;background:linear-gradient(90deg,${barColor},${barColor}99)"></div></div>
+        ${v.Descrizione?`<div style="font-size:10px;color:#888;margin-top:6px">📋 ${v.Descrizione}</div>`:''}
+        ${v.Conclusioni?`<div class="var-conclusione">💡 ${v.Conclusioni}</div>`:''}
+      </div>`;
+    }).join(''):'<div style="font-size:11px;color:#bbb;padding:12px 0">Nessuna variante registrata ancora.</div>';
+    return`<div class="log-card">
+      <div class="log-card-hdr">
+        <span class="log-lotto">${cod}</span>
+        <span class="log-specie">${lotto?.Specie||''}</span>
+        <span class="sb sb-sp" style="margin-left:auto">${lotto?.Stato||'Sperimentale'}</span>
+      </div>
+      ${varHtml}
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL PROMOZIONE ──────────────────────────────────────
+function apriModal(i){
+  promoLottoIndex=i;
+  const l=DB.Lotti[i];
+  document.getElementById('modal-promo-desc').textContent=
+    `Lotto ${l.Codice} — ${l.Specie||''}. Inserisci quante piante hanno attecchito e passano in produzione.`;
+  document.getElementById('promo-qty').value='';
+  document.getElementById('promo-note').value='';
+  document.getElementById('modal-promo').classList.remove('hidden');
+}
+function chiudiModal(){
+  document.getElementById('modal-promo').classList.add('hidden');
+  promoLottoIndex=-1;
+}
+async function confermaPromozione(){
+  const qty=parseInt(document.getElementById('promo-qty').value);
+  if(!qty||qty<1){toast('⚠ Inserisci il numero di piante!',true);return;}
+  if(promoLottoIndex<0)return;
+  const l=DB.Lotti[promoLottoIndex];
+  const oldCod=l.Codice;
+  // aggiorna DB locale
+  DB.Lotti[promoLottoIndex]['Quantità']=qty;
+  DB.Lotti[promoLottoIndex].Stato='Produzione';
+  DB.Lotti[promoLottoIndex].Note=(l.Note?l.Note+' | ':'')+'Promosso: '+document.getElementById('promo-note').value;
+  const updated=DB.Lotti[promoLottoIndex];
+  const row=[updated.Codice,updated.Specie,updated.Anno,updated.Progressivo,qty,
+    updated.DataIngresso,updated.Provenienza,'Produzione',updated.Note];
+  try{
+    await apiPost({action:'delete',sheet:'Lotti',keyCol:1,keyVal:oldCod});
+    await apiPost({action:'append',sheet:'Lotti',row});
+    chiudiModal();
+    renderLotti();refreshSelects();renderSperim();
+    toast('✅ Lotto promosso a Produzione!');
+  }catch(e){toast('⚠ Errore aggiornamento',true);}
 }
 
 // ── RINVASO ──────────────────────────────────────────────
@@ -759,7 +968,7 @@ function renderRiepilogo(){
   }
   const tariffa=parseFloat(document.getElementById('rie-tariffa')?.value)||0;
   let totC=0,totP=0;
-  const rows=DB.Lotti.map(l=>{
+  const rows=DB.Lotti.filter(l=>l.Stato==='Produzione').map(l=>{
     // ore totali per lotto (rinvaso + potatura + legatura)
     const oreR=DB.Rinvaso.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.Ore||0),0);
     const oreP=DB.Potatura.filter(x=>x.Lotto===l.Codice).reduce((s,x)=>s+Number(x.Ore||0),0);
